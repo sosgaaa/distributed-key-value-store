@@ -2,6 +2,10 @@
 
 C implementation of a distributed key-value store for EPFL CS-202, based on the [project specification](https://projprogsys-epfl.github.io/project/).
 
+## Course and starting point
+
+[Computer systems (CS-202)](https://edu.epfl.ch/coursebook/en/computer-systems-CS-202) combines operating-system and networking concepts with hands-on C programming. DKVS applies them to UDP communication, concurrent request handling and replicated storage; the course supplied staged specifications and a C scaffold, and this repository implements the client, server, hash table and ring.
+
 ## Features
 
 - UDP servers with an in-memory, mutex-protected hash table and one worker per request.
