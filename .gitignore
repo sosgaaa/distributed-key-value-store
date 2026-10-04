@@ -1,0 +1,7 @@
+dkvs-client
+dkvs-server
+src/*.o
+__pycache__/
+*.pyc
+.DS_Store
+servers.txt
