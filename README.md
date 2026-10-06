@@ -1,59 +1,48 @@
-# DKVS 📦
+# DKVS — Distributed Key-Value Store
 
-Put a value on one machine. Find it again through a few others.
+**A small distributed storage system built in C.** Store a value under a key,
+then retrieve it from a cluster of servers.
 
-This is my **Computer Systems (CS-202)** project from EPFL: a distributed key-value store written in **C**. The basic idea is a tiny `put` / `get` service, but with several servers sharing the work.
+Developed in a team of two with **Ali El Azdi** for **Computer Systems
+(CS-202)**, during my second year of Computer Science at **EPFL**.
 
-It connects a lot of course topics in one place: hash tables, sockets, threads, and what happens when a server stops replying. A command that looks simple in the terminal can involve several machines agreeing on an answer.
+**Stack:** C11 · UDP sockets · POSIX threads · OpenSSL · Python · Make
 
 ## What it does
 
-- Stores string keys and values in memory.
-- Talks to servers over **UDP**.
-- Uses a **SHA-1 hash ring** to choose where keys belong.
-- Supports virtual nodes and copies of a value on several servers.
-- Lets you choose how many replies are needed for reads and writes.
-- Handles requests with threads and protects the hash table with a mutex.
+- **Shares data across servers:** a hash ring decides where each key belongs.
+- **Keeps multiple copies:** configurable read/write thresholds let operations
+  succeed even when some servers do not respond.
+- **Handles concurrent requests:** threads and mutexes protect shared data.
+- **Provides a command-line client:** store, retrieve, concatenate, extract and
+  search values, plus inspect the data held by each server.
 
-## Build
+For example, storing `greeting → hello` lets the client retrieve `hello`
+through the cluster, without choosing a server manually.
 
-You need a **C11 compiler**, **Make**, **OpenSSL development headers**, and **Python 3** for the tests. On macOS with Homebrew OpenSSL, the Makefile checks `/opt/homebrew/opt/openssl@3`; use `OPENSSL_PREFIX` for another location.
+## What I learned
+
+This project connected data structures, networking and concurrency in one
+working system. It gave me practical experience with memory management in C,
+socket programming, synchronization, and debugging failures across processes.
+
+Tests cover concurrent clients, unavailable servers, conflicting replies and
+malformed packets. **27 Python tests and 4 C test groups pass**, including
+checks with AddressSanitizer and UndefinedBehaviorSanitizer.
+
+## Try it
+
+Requires a C compiler, OpenSSL, Make and Python 3.
 
 ```sh
 make
 make test
 ```
 
-## Try a small cluster
+See the [running guide](docs/USAGE.md) to start a local cluster, or explore the
+[architecture](docs/ARCHITECTURE.md) for technical details. Data is stored in
+memory and cleared when a server restarts.
 
-Copy the example configuration:
-
-```sh
-cp servers.example.txt servers.txt
-```
-
-Each line contains an IP address, a port, and a number of virtual nodes. Start these servers in **three separate terminals**:
-
-```sh
-./dkvs-server 127.0.0.1 1234
-./dkvs-server 127.0.0.1 1235
-./dkvs-server 127.0.0.1 1236
-```
-
-Then, from a fourth terminal:
-
-```sh
-./dkvs-client ring
-./dkvs-client put -n 3 -w 2 -- greeting hello
-./dkvs-client get -n 3 -r 2 -- greeting
-```
-
-The last command should print `OK hello`.
-
-Here, `-n 3` means three copies, `-w 2` means two successful write replies, and `-r 2` means two matching read replies. To try another configuration file, add `-c path/to/servers.txt`.
-
-## A few details
-
-Values are limited to **512 bytes**. Data lives in memory, so restarting a server clears it. The client contacts replicas one after another. The tests start real local UDP servers and check reads, updates, invalid input, and an unavailable server.
-
-The course brief is available on the [CS-202 project website](https://projprogsys-epfl.github.io/project/).
+The local hash function is adapted from
+[idbenj's DKVS](https://github.com/idbenj/dkvs-distributed-key-value-store)
+under the [MIT license](LICENSES/idbenj-MIT.txt).

@@ -1,4 +1,5 @@
 #include "dkvs.h"
+#include "args.h"
 
 #include <arpa/inet.h>
 #include <openssl/sha.h>
@@ -34,15 +35,16 @@ int ring_load(ring_t *ring, const char *path)
     int status = 0;
     while (getline(&line, &line_size, file) >= 0) {
         char ip[INET_ADDRSTRLEN];
-        unsigned int port;
-        unsigned int copies;
+        char port_text[32], copies_text[32];
+        uint64_t port, copies;
         char extra;
         char *comment = strchr(line, '#');
         if (comment != NULL) *comment = '\0';
-        int fields = sscanf(line, " %15s %u %u %c", ip, &port, &copies, &extra);
+        int fields = sscanf(line, " %15s %31s %31s %c", ip, port_text, copies_text, &extra);
         if (fields == -1) continue;
-        if (fields != 3 || port == 0 || port > 65535 || copies == 0 ||
-            copies > MAX_NODES || ring->count + copies > MAX_NODES) {
+        if (fields != 3 || parse_unsigned(port_text, 65535, &port) != 0 || port == 0 ||
+            parse_unsigned(copies_text, MAX_NODES, &copies) != 0 || copies == 0 ||
+            ring->count + copies > MAX_NODES) {
             status = -1;
             break;
         }
@@ -74,7 +76,7 @@ int ring_load(ring_t *ring, const char *path)
             node->address.sin_port = htons(node->port);
             node->address.sin_addr = address;
             char name[96];
-            int length = snprintf(name, sizeof(name), "%s %u %u", ip, port, id);
+            int length = snprintf(name, sizeof(name), "%s %u %u", ip, (unsigned int) port, id);
             if (length < 0 || (size_t) length >= sizeof(name)) {
                 status = -1;
                 break;
@@ -100,6 +102,16 @@ void ring_destroy(ring_t *ring)
     if (ring == NULL) return;
     free(ring->nodes);
     *ring = (ring_t) {0};
+}
+
+void ring_print(const ring_t *ring)
+{
+    for (size_t i = 0; i < ring->count; ++i) {
+        const node_t *node = &ring->nodes[i];
+        printf("%s:%u vnode=%u sha=", node->ip, node->port, node->virtual_id);
+        for (size_t j = 0; j < sizeof(node->digest); ++j) printf("%02x", node->digest[j]);
+        putchar('\n');
+    }
 }
 
 size_t ring_select(const ring_t *ring, const char *key, size_t limit, node_t *selected)

@@ -1,8 +1,15 @@
 dkvs-client
 dkvs-server
+dkvs-dump-ring
+udp-test-client
+udp-test-server
+tests/test_unit
+tests/*.d
 src/*.o
+src/*.d
 __pycache__/
 *.pyc
+*.dSYM/
 .DS_Store
 servers.txt
 

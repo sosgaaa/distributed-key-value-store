@@ -23,3 +23,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libssl-dev
       - name: Build and test local UDP cluster
         run: make test
+      - name: Check memory and undefined behavior
+        run: make sanitize
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
