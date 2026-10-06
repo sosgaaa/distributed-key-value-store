@@ -5,3 +5,11 @@ __pycache__/
 *.pyc
 .DS_Store
 servers.txt
+
+# Local files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.vscode/

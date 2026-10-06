@@ -1,38 +1,38 @@
-# DKVS — distributed key-value store
+# DKVS 📦
 
-C implementation of a distributed key-value store for EPFL CS-202, based on the [project specification](https://projprogsys-epfl.github.io/project/).
+Put a value on one machine. Find it again through a few others.
 
-## Course and starting point
+This is my **Computer Systems (CS-202)** project from EPFL: a distributed key-value store written in **C**. The basic idea is a tiny `put` / `get` service, but with several servers sharing the work.
 
-[Computer systems (CS-202)](https://edu.epfl.ch/coursebook/en/computer-systems-CS-202) combines operating-system and networking concepts with hands-on C programming. DKVS applies them to UDP communication, concurrent request handling and replicated storage; the course supplied staged specifications and a C scaffold, and this repository implements the client, server, hash table and ring.
+It connects a lot of course topics in one place: hash tables, sockets, threads, and what happens when a server stops replying. A command that looks simple in the terminal can involve several machines agreeing on an answer.
 
-## Features
+## What it does
 
-- UDP servers with an in-memory, mutex-protected hash table and one worker per request.
-- SHA-1 consistent-hash ring with configurable virtual nodes and distinct physical replicas.
-- Client `put` and `get` operations with configurable replication factor `N` and write/read quorums `W`/`R`.
-- Timeouts, malformed-packet checks, length limits, and loopback integration tests.
+- Stores string keys and values in memory.
+- Talks to servers over **UDP**.
+- Uses a **SHA-1 hash ring** to choose where keys belong.
+- Supports virtual nodes and copies of a value on several servers.
+- Lets you choose how many replies are needed for reads and writes.
+- Handles requests with threads and protects the hash table with a mutex.
 
-The wire format follows the course specification: `key` for a read, `key\0value` for a write, a zero-byte success reply, and a one-byte `\0` missing-key reply. Values are limited to 512 bytes. Storage is in memory, so restarting a server clears its data. The client contacts replicas sequentially.
+## Build
 
-## Build and run
-
-Requirements: a C11 compiler, pthreads, Python 3 for tests, and OpenSSL development headers (`libcrypto`).
+You need a **C11 compiler**, **Make**, **OpenSSL development headers**, and **Python 3** for the tests. On macOS with Homebrew OpenSSL, the Makefile checks `/opt/homebrew/opt/openssl@3`; use `OPENSSL_PREFIX` for another location.
 
 ```sh
 make
 make test
 ```
 
-Create `servers.txt` with one line per physical server: `IP PORT VIRTUAL_NODES`.
+## Try a small cluster
 
-```text
-127.0.0.1 1234 2
-127.0.0.1 1235 2
-127.0.0.1 1236 2
+Copy the example configuration:
+
+```sh
+cp servers.example.txt servers.txt
 ```
 
-Start one process per line, in separate terminals:
+Each line contains an IP address, a port, and a number of virtual nodes. Start these servers in **three separate terminals**:
 
 ```sh
 ./dkvs-server 127.0.0.1 1234
@@ -40,7 +40,7 @@ Start one process per line, in separate terminals:
 ./dkvs-server 127.0.0.1 1236
 ```
 
-Then run:
+Then, from a fourth terminal:
 
 ```sh
 ./dkvs-client ring
@@ -48,8 +48,12 @@ Then run:
 ./dkvs-client get -n 3 -r 2 -- greeting
 ```
 
-The default configuration path is `servers.txt`; use `-c PATH` to select another. The default `N` is the number of distinct servers, with `R=W=1`. A successful command exits with status 0; a failed quorum or missing key exits with status 1; invalid arguments exit with status 2.
+The last command should print `OK hello`.
 
-## Specification
+Here, `-n 3` means three copies, `-w 2` means two successful write replies, and `-r 2` means two matching read replies. To try another configuration file, add `-c path/to/servers.txt`.
 
-The implementation follows the EPFL CS-202 assignment handouts.
+## A few details
+
+Values are limited to **512 bytes**. Data lives in memory, so restarting a server clears it. The client contacts replicas one after another. The tests start real local UDP servers and check reads, updates, invalid input, and an unavailable server.
+
+The course brief is available on the [CS-202 project website](https://projprogsys-epfl.github.io/project/).
